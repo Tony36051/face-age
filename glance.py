@@ -26,10 +26,13 @@ def filter_unusual(full_path, gender, face_score, second_face_score, age):
     return np.intersect1d(gender_idx, age_idx)
 
 
-if __name__ == '__main__':
+def plot_age_dist():
     mat_path = ur"D:\wiki_crop\wiki.mat"
     db = "wiki"
     full_path, dob, gender, photo_taken, face_score, second_face_score, age = get_meta(mat_path, db)
     ok_idx = filter_unusual(full_path, gender, face_score, second_face_score, age)
 
     plot.histgram_demo(age[ok_idx])
+
+if __name__ == '__main__':
+    pass
