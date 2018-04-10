@@ -7,7 +7,7 @@ import os
 cur_dir = os.path.dirname(__file__)
 data_dir = os.path.join(cur_dir, "data")
 classifier_xml = os.path.join(data_dir, "haarcascade_frontalface_alt2.xml")
-predictor_path = os.path.join(data_dir, "shape_predictor_68_face_landmarks.dat.bz2")
+predictor_path = os.path.join(data_dir, "shape_predictor_68_face_landmarks.dat")
 img_path = os.path.join(data_dir, "wiki_crop", "00", "23300_1962-06-19_2011.jpg")
 
 
@@ -32,7 +32,7 @@ def dlib_one(img_path):
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
     brg_img = cv2.imread(img_path)
-    rgb_img = cv2.cvtColor(brg_img, cv2.COLOR_BRG2RGB)
+    rgb_img = cv2.cvtColor(brg_img,  cv2.COLOR_BGRA2RGB)
     dets = detector(rgb_img, 1)
     print("Number of faces detected: {}".format(len(dets)))
     for i, d in enumerate(dets):
