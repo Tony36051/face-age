@@ -18,7 +18,7 @@ logger.setLevel(logging.DEBUG)
 def filter_unusual(full_path, gender, face_score, second_face_score, age):
     # label filter
     gender_idx = np.where(~np.isnan(gender))[0]
-    age_idx = [i for i in xrange(len(age)) if 0 <= age[i] <= MAX_AGE]
+    age_idx = [i for i in range(len(age)) if 0 <= age[i] <= MAX_AGE]
     # face filter
     # face_score_idx = np.where(face_score <= 0)[0]
     # second_face_score_idx = np.where(second_face_score>0)[0]
@@ -27,7 +27,7 @@ def filter_unusual(full_path, gender, face_score, second_face_score, age):
 
 
 def plot_age_dist():
-    mat_path = ur"D:\wiki_crop\wiki.mat"
+    mat_path = r"D:\wiki_crop\wiki.mat"
     db = "wiki"
     full_path, dob, gender, photo_taken, face_score, second_face_score, age = get_meta(mat_path, db)
     ok_idx = filter_unusual(full_path, gender, face_score, second_face_score, age)
@@ -35,4 +35,4 @@ def plot_age_dist():
     plot.histgram_demo(age[ok_idx])
 
 if __name__ == '__main__':
-    pass
+    plot_age_dist()
