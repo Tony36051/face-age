@@ -1,5 +1,6 @@
 from skimage import feature as ft
 from skimage import io
+from skimage import transform
 import argparse
 import utils
 import math
@@ -9,10 +10,11 @@ import tqdm
 
 
 def extract_hog(img_full_path):
-    ori = 8
-    ppc = (16, 16)
-    cpb = (1, 1)
+    ori = 9
+    ppc = (4, 4)
+    cpb = (4, 4)
     image = io.imread(img_full_path)
+    image = transform.resize(image, (60, 60))
     features = ft.hog(image,  # input image
                       orientations=ori,  # number of bins
                       pixels_per_cell=ppc,  # pixel per cell
