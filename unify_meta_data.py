@@ -27,18 +27,21 @@ def filter_unusual(full_path, gender, face_score, second_face_score, age):
     return np.intersect1d(gender_idx, age_idx)
 
 
-def main_process(data_path, db):
+def main_process(data_path, db, limit=None):
     mat_path = os.path.join(data_path, db + "_crop", db + ".mat")
     full_path, dob, gender, photo_taken, face_score, second_face_score, age = get_meta(mat_path, db)
     ok_idx = filter_unusual(full_path, gender, face_score, second_face_score, age)
-    with open(db + ".txt", 'w') as f:
+    meta_file = os.path.join(data_path, db + ".txt")
+    with open(meta_file, 'w') as f:
         for i in trange(len(ok_idx)):
-            f.write("%s/%s %d\n" % (db, full_path[i][0], age[i]))
-
-
-
+            if limit and i >= int(limit):
+                break
+            f.write("%s_crop/%s %d\n" % (db, full_path[i][0], age[i]))
+    return meta_file
 
 if __name__ == '__main__':
     data_path = str(sys.argv[1]) if len(sys.argv) > 1 else r"d:/data"
+    data_path = "/home/tony/data"
     db = "wiki"
-    main_process(data_path, db)
+    meta_file = main_process(data_path, db)
+    print("meta_file: " + meta_file)
