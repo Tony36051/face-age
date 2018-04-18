@@ -116,7 +116,7 @@ if __name__ == '__main__':
     predictor = dlib.shape_predictor(predictor_path)
     fa = FaceAligner(predictor, desiredFaceWidth=160)
 
-    db = "wiki"
+    db = "imdb"
     meta_file = "%s.txt" % db
     results = list()
     train_path, train_age = utils.read_meta_data(data_dir, meta_file)
