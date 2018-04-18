@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 import cv2
 import dlib
-import numpy
 import os
+import sys
 from imutils.face_utils import FaceAligner
-from tqdm import tqdm, trange
-import multiprocessing
-from time import sleep, time
-import threading
+from tqdm import tqdm
 import math
-#cur_dir = os.path.dirname(__file__)
-cur_dir = os.path.dirname(os.path.abspath(__file__))
+from multiprocessing import Process as pro, Pool
+import argparse
+
+cur_dir = os.path.dirname(__file__)
+# cur_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(cur_dir, "data")
-#data_dir = r"d:/data"  # special for windows
+# data_dir = r"d:/data"  # special for windows
 classifier_xml = os.path.join(data_dir, "haarcascade_frontalface_alt2.xml")
 predictor_path = os.path.join(data_dir, "shape_predictor_68_face_landmarks.dat")
 
@@ -20,7 +20,8 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 fa = FaceAligner(predictor, desiredFaceWidth=160)
 
-def demo_one(img_path):
+
+def opencv_recognize(img_path):
     face_patterns = cv2.CascadeClassifier(classifier_xml)
     sample_image = cv2.imread(img_path)
     # cv2.imshow("image", sample_image)
@@ -35,13 +36,13 @@ def demo_one(img_path):
     cv2.destroyAllWindows()
 
 
-def dlib_one(img_path):
+def dlib_recognize_and_align(img_path):
     '''加载人脸检测器、加载官方提供的模型构建特征提取器'''
     win = dlib.image_window()
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
     brg_img = cv2.imread(img_path)
-    rgb_img = cv2.cvtColor(brg_img,  cv2.COLOR_BGRA2RGB)
+    rgb_img = cv2.cvtColor(brg_img, cv2.COLOR_BGRA2RGB)
     dets = detector(rgb_img, 1)
     print("Number of faces detected: {}".format(len(dets)))
     for i, d in enumerate(dets):
@@ -55,23 +56,24 @@ def dlib_one(img_path):
     pass
 
 
-def align_and_save(img_path):
-
-    bgr_img = cv2.imread(img_path)
-    # gray = bgr_img
-    gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+def align_and_save(data_dir, img_path):
+    full_path = os.path.join(data_dir, img_path)
+    bgr_img = cv2.imread(full_path, 0)
+    gray = bgr_img
+    # gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
     rects = detector(gray, 1)
     if len(rects) != 1:
-        return None
+        return False
     img = fa.align(gray, gray, rects[0])
-    new_file_path = img_path.replace("data", "aligned")
-    dir = os.path.dirname(new_file_path)
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    cv2.imwrite(img_path.replace("data", "aligned"), img)
-    return new_file_path
+    new_file_path = os.path.join(data_dir, "aligned", img_path)
+    aligned_dir = os.path.dirname(new_file_path)
+    if not os.path.exists(aligned_dir):
+        os.makedirs(aligned_dir)
+    cv2.imwrite(new_file_path, img)
+    return True
 
-def read_pre_age_txt(file_name):
+
+def read_meta_data(data_dir, file_name):
     path = list()
     age = list()
     with open(os.path.join(data_dir, file_name)) as f:
@@ -83,6 +85,7 @@ def read_pre_age_txt(file_name):
 
 
 def crop_train_face(train_path, train_age):
+    """single process"""
     pre_len = len(train_path)
     new_path = list()
     new_age = list()
@@ -94,87 +97,64 @@ def crop_train_face(train_path, train_age):
     return new_path, new_age
 
 
-def task(position, train_path, train_age):
-    # while True:
-    #     a = 100
-    #     a = a ** a
-    # a  = len(start)
-    # for img_path in train_path:
-    #     # index = i + start
-    #     r = align_and_save(img_path = data_dir + img_path)
-    #     if r is None:
-    #         train_age[i] = -1
-    with open("pos_"+str(position)+".txt", 'w') as f:
-        for i, img_path in enumerate(train_path):
-            # index = i + start
-            #print(data_dir, img_path)
-            img_path = data_dir + img_path
-            
-            #img_path = os.path.join(data_dir, img_path)
-            #img_path = os.path.normpath(img_path)
+def task(data_dir, stage, img_paths, ages, position):
+    file_name = os.path.join(data_dir, "%s_%d.txt" % (stage, position))
+    with open(file_name, 'w') as f:
+        for i, img_paths in enumerate(img_paths):
+            img_paths = img_paths[1:] if img_paths[0] == "/" else img_paths
+            if align_and_save(data_dir, img_paths):
+                f.write("aligned/%s %d\n" % (img_paths, ages[i]))
+    return file_name
 
-            #if not os.path.isfile(img_path):
-            #    print("file not existed:"+img_path)
-            r = align_and_save(img_path)
-            if r is None:
-                train_age[i] = -1
-            else:
-                f.write("%s %d"%(img_path, train_age[i]))
+
+def merge_pool_results(data_dir, results):
+    merged_file = os.path.join(data_dir, "aligned_meta.txt")
+    with open(merged_file, 'w') as wf:
+        for file in results:
+            with open(file.get(), 'r') as rf:
+                wf.writelines(rf.readlines())
+        os.remove(file)
 
 def chunks(arr, m):
     n = int(math.ceil(len(arr) / float(m)))
     return [arr[i:i + n] for i in range(0, len(arr), n)]
 
-from multiprocessing import Process as pro
-from multiprocessing.dummy import Process as thr
-def run(i):
-	lists=range(i)
-	list(set(lists))
-def multicore():
-    '''
-    	多进程
-    	'''
-    for i in range(0, len(train_path), n):  ##10-2.1s 20-3.8s 30-5.9s
-        t = pro(target=task, args=(i,i+n,))
-        t.start()
-
-def ok():
-    a = r"d:/data/imdb_crop/49/nm0082749_rm3881159680_1971-1-18_2008.jpg"
-    img = cv2.imread(a)
-    cv2.imshow("img", img)
-    exit(0)
 
 if __name__ == '__main__':
-    # ok()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', required=False, help='data dir')
+    parser.add_argument('--process', required=False, help='how many process')
 
-    train_path, train_age = read_pre_age_txt("train_age.txt")
-    # print(len(train_path))
-    # new_path, new_age = crop_train_face(train_path, train_age)
-    # print(len(train_path), len(new_age))
+    args = parser.parse_args()
+    process = int(args.process) if args.process else 32
+    data_dir = args.data_dir if args.data_dir else "/home/tony/data"
 
-    m = 16
-    n = int(math.ceil(len(train_path) / float(m)))
-    # pool = multiprocessing.Pool(processes=m)
-    # for i in range(0, len(train_path), n):  ##10-2.1s 20-3.8s 30-5.9s
-    #     pool.apply(task, args=(train_age[i: i+n]))
-    # pool.close()
-    # pool.join()
-    # retlist = [pool.apply_async(task(i,i + n)) for i in range(0, len(train_path), n)]
-    #
-    # print('Waiting for all subprocesses done...')
-    # pool.close()
-    # pool.join()
-    # print('All subprocesses done.')
+    stage = "train"
+    meta_file = "wiki.txt"
+    results = list()
+    train_path, train_age = read_meta_data(data_dir, meta_file)
+    n = int(math.ceil(len(train_path) / float(process)))
+    print(len(train_path))
 
-    for i in range(0, len(train_path), n):  ##10-2.1s 20-3.8s 30-5.9s
-        t = pro(target=task, args=(i, train_path[i: i+n],train_age[i:i+n]))
-        t.start()
+    pool = Pool(processes=process)
+    for i in range(0, len(train_path), n):
+        t = pool.apply_async(task, args=(data_dir, stage, train_path[i: i + n], train_age[i:i + n], i,))
+        results.append(t)
+    pool.close()
+    pool.join()
 
 
 
 
+        # merge_pool_results(data_dir, results)
+        # print('Waiting for all subprocesses done...')
+        # pool.close()
+        # pool.join()
+        # print('All subprocesses done.')
 
 
-
-
-
+        # for i in range(0, len(train_path), n):
+        #     t = pro(target=task, args=(data_dir, stage, train_path[i: i + n], train_age[i:i + n]))
+        #     t.start()
+        #
+        #
