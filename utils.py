@@ -36,6 +36,6 @@ def mk_dir(dir):
 
 
 if __name__ == '__main__':
-    mat_path = ur"D:\wiki_crop\wiki.mat"
+    mat_path = r"D:\wiki_crop\wiki.mat"
     db = "wiki"
     full_path, dob, gender, photo_taken, face_score, second_face_score, age = get_meta(mat_path, db)
