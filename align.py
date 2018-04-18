@@ -131,3 +131,4 @@ if __name__ == '__main__':
     pool.join()
 
     merge_pool_results(data_dir, db, [t.get() for t in results])
+    [os.remove(os.path.join(data_dir, t.get())) for t in results]
