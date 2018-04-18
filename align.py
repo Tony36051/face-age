@@ -10,17 +10,6 @@ from multiprocessing import Process as pro, Pool
 import argparse
 import utils
 
-cur_dir = os.path.dirname(__file__)
-# cur_dir = os.path.dirname(os.path.abspath(__file__))
-data_dir = os.path.join(cur_dir, "data")
-# data_dir = r"d:/data"  # special for windows
-classifier_xml = os.path.join(data_dir, "haarcascade_frontalface_alt2.xml")
-predictor_path = os.path.join(data_dir, "shape_predictor_68_face_landmarks.dat")
-
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(predictor_path)
-fa = FaceAligner(predictor, desiredFaceWidth=160)
-
 
 def opencv_recognize(img_path):
     face_patterns = cv2.CascadeClassifier(classifier_xml)
@@ -98,7 +87,7 @@ def task(data_dir, db, img_paths, ages, position):
 
 
 def merge_pool_results(data_dir, db, results):
-    merged_file = os.path.join(data_dir, "aligned_%s.txt"%db)
+    merged_file = os.path.join(data_dir, "aligned_%s.txt" % db)
     with open(merged_file, 'w') as wf:
         for file in results:
             with open(file, 'r') as rf:
@@ -119,6 +108,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     process = int(args.process) if args.process else 32
     data_dir = args.data_dir if args.data_dir else "/home/haonan/dqd/data"
+
+    classifier_xml = os.path.join(data_dir, "haarcascade_frontalface_alt2.xml")
+    predictor_path = os.path.join(data_dir, "shape_predictor_68_face_landmarks.dat")
+
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor(predictor_path)
+    fa = FaceAligner(predictor, desiredFaceWidth=160)
 
     db = "wiki"
     meta_file = "%s.txt" % db
