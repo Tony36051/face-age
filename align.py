@@ -74,9 +74,6 @@ def align_and_save(data_dir, img_path):
     return True
 
 
-
-
-
 def crop_train_face(train_path, train_age):
     """single process"""
     pre_len = len(train_path)
@@ -90,8 +87,8 @@ def crop_train_face(train_path, train_age):
     return new_path, new_age
 
 
-def task(data_dir, stage, img_paths, ages, position):
-    file_name = os.path.join(data_dir, "%s_%d.txt" % (stage, position))
+def task(data_dir, db, img_paths, ages, position):
+    file_name = os.path.join(data_dir, "%s_%d.txt" % (db, position))
     with open(file_name, 'w') as f:
         for i, img_path in enumerate(img_paths):
             img_path = img_path[1:] if img_path[0] == "/" else img_path
@@ -100,13 +97,14 @@ def task(data_dir, stage, img_paths, ages, position):
     return file_name
 
 
-def merge_pool_results(data_dir, results):
-    merged_file = os.path.join(data_dir, "aligned_meta.txt")
+def merge_pool_results(data_dir, db, results):
+    merged_file = os.path.join(data_dir, "aligned_%s.txt"%db)
     with open(merged_file, 'w') as wf:
         for file in results:
             with open(file, 'r') as rf:
                 wf.writelines(rf.readlines())
         os.remove(file)
+
 
 def chunks(arr, m):
     n = int(math.ceil(len(arr) / float(m)))
@@ -120,10 +118,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     process = int(args.process) if args.process else 32
-    data_dir = args.data_dir if args.data_dir else "/home/tony/data"
+    data_dir = args.data_dir if args.data_dir else "/home/haonan/dqd/data"
 
-    stage = "train"
-    meta_file = "wiki.txt"
+    db = "wiki"
+    meta_file = "%s.txt" % db
     results = list()
     train_path, train_age = utils.read_meta_data(data_dir, meta_file)
     n = int(math.ceil(len(train_path) / float(process)))
@@ -131,9 +129,9 @@ if __name__ == '__main__':
 
     pool = Pool(processes=process)
     for i in range(0, len(train_path), n):
-        t = pool.apply_async(task, args=(data_dir, stage, train_path[i: i + n], train_age[i:i + n], i,))
+        t = pool.apply_async(task, args=(data_dir, db, train_path[i: i + n], train_age[i:i + n], i,))
         results.append(t)
     pool.close()
     pool.join()
 
-    merge_pool_results(data_dir, [t.get() for t in results])
+    merge_pool_results(data_dir, db, [t.get() for t in results])
