@@ -10,20 +10,17 @@ import tqdm
 
 
 def extract_hog(img_full_path):
-    ori = 9
-    ppc = (4, 4)
-    cpb = (4, 4)
     image = io.imread(img_full_path)
     image = transform.resize(image, (60, 60))
     features = ft.hog(image,  # input image
-                      orientations=ori,  # number of bins
-                      pixels_per_cell=ppc,  # pixel per cell
-                      cells_per_block=cpb,  # cells per blcok
+                      orientations=9,  # number of bins
+                      pixels_per_cell=(8, 8),  # pixel per cell
+                      cells_per_block=(3, 3),  # cells per blcok
                       block_norm='L2-Hys',  # block norm : str {‘L1’, ‘L1-sqrt’, ‘L2’, ‘L2-Hys’}, optional
                       transform_sqrt=True,  # power law compression (also known as gamma correction)
                       feature_vector=True,  # flatten the final vectors
                       visualise=False)  # return HOG map
-    return features
+    return features.astype(float32)
 
 
 def task(data_dir, stage, paths, ages, position):
@@ -68,8 +65,8 @@ if __name__ == '__main__':
     parser.add_argument('--process', required=False, help='how many process')
 
     args = parser.parse_args()
-    process = int(args.process) if args.process else 32
-    data_dir = args.data_dir if args.data_dir else "/home/tony/data"
+    process = int(args.process) if args.process else 16
+    data_dir = args.data_dir if args.data_dir else "/home/haonan/dqd/data"
 
     stage = "hog"
     meta_file = "aligned_meta.txt"
