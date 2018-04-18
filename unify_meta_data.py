@@ -36,7 +36,7 @@ def main_process(data_path, db):
             f.write("%s/%s %d\n" % (db, full_path[i][0], age[i]))
 
 
-def
+
 
 if __name__ == '__main__':
     data_path = str(sys.argv[1]) if len(sys.argv) > 1 else r"d:/data"
