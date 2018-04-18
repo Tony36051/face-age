@@ -8,6 +8,7 @@ from tqdm import tqdm
 import math
 from multiprocessing import Process as pro, Pool
 import argparse
+import utils
 
 cur_dir = os.path.dirname(__file__)
 # cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -73,15 +74,7 @@ def align_and_save(data_dir, img_path):
     return True
 
 
-def read_meta_data(data_dir, file_name):
-    path = list()
-    age = list()
-    with open(os.path.join(data_dir, file_name)) as f:
-        for line in f.readlines():
-            ss = line.split(" ")
-            path.append(ss[0])
-            age.append(int(ss[1]))
-    return path, age
+
 
 
 def crop_train_face(train_path, train_age):
@@ -100,10 +93,10 @@ def crop_train_face(train_path, train_age):
 def task(data_dir, stage, img_paths, ages, position):
     file_name = os.path.join(data_dir, "%s_%d.txt" % (stage, position))
     with open(file_name, 'w') as f:
-        for i, img_paths in enumerate(img_paths):
-            img_paths = img_paths[1:] if img_paths[0] == "/" else img_paths
-            if align_and_save(data_dir, img_paths):
-                f.write("aligned/%s %d\n" % (img_paths, ages[i]))
+        for i, img_path in enumerate(img_paths):
+            img_path = img_path[1:] if img_path[0] == "/" else img_path
+            if align_and_save(data_dir, img_path):
+                f.write("aligned/%s %d\n" % (img_path, ages[i]))
     return file_name
 
 
@@ -111,7 +104,7 @@ def merge_pool_results(data_dir, results):
     merged_file = os.path.join(data_dir, "aligned_meta.txt")
     with open(merged_file, 'w') as wf:
         for file in results:
-            with open(file.get(), 'r') as rf:
+            with open(file, 'r') as rf:
                 wf.writelines(rf.readlines())
         os.remove(file)
 
@@ -132,7 +125,7 @@ if __name__ == '__main__':
     stage = "train"
     meta_file = "wiki.txt"
     results = list()
-    train_path, train_age = read_meta_data(data_dir, meta_file)
+    train_path, train_age = utils.read_meta_data(data_dir, meta_file)
     n = int(math.ceil(len(train_path) / float(process)))
     print(len(train_path))
 
@@ -143,18 +136,4 @@ if __name__ == '__main__':
     pool.close()
     pool.join()
 
-
-
-
-        # merge_pool_results(data_dir, results)
-        # print('Waiting for all subprocesses done...')
-        # pool.close()
-        # pool.join()
-        # print('All subprocesses done.')
-
-
-        # for i in range(0, len(train_path), n):
-        #     t = pro(target=task, args=(data_dir, stage, train_path[i: i + n], train_age[i:i + n]))
-        #     t.start()
-        #
-        #
+    merge_pool_results(data_dir, [t.get() for t in results])
