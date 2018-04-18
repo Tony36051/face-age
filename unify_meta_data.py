@@ -41,7 +41,10 @@ def main_process(data_path, db, limit=None):
 
 if __name__ == '__main__':
     data_path = str(sys.argv[1]) if len(sys.argv) > 1 else r"d:/data"
-    data_path = "/home/tony/data"
+    data_path = "/home/haonan/dqd/data"
     db = "wiki"
+    meta_file = main_process(data_path, db)
+    print("meta_file: " + meta_file)
+    db = "imdb"
     meta_file = main_process(data_path, db)
     print("meta_file: " + meta_file)

@@ -9,7 +9,7 @@ import sklearn
 from sklearn.ensemble import RandomForestRegressor
 
 
-data_dir = "/home/tony/data"
+data_dir = "/home/haonan/dqd/aligned"
 hog_file = "hog.txt"
 
 train_data = pd.read_csv(os.path.join(data_dir, hog_file), header=None)
@@ -17,15 +17,15 @@ X_train, X_test, y_train, y_test = train_test_split(train_data.values[:, 0:-1], 
                                                     test_size=0.1, random_state=2018, shuffle=True)
 
 # PCA
-# pca = PCA(n_components=100, whiten=True)
-# X_train = pca.fit_transform(X_train)
-# X_test = pca.fit_transform(X_test)
-# print(X_train.shape)
-# print(X_test.shape)
+pca = PCA(n_components=100, whiten=True)
+X_train = pca.fit_transform(X_train)
+X_test = pca.fit_transform(X_test)
+print(X_train.shape)
+print(X_test.shape)
 
 
 # svc
-regr = RandomForestRegressor(n_estimators=320, n_jobs=32, random_state=2018, verbose=1)
+regr = RandomForestRegressor(n_estimators=320, n_jobs=16, random_state=2018, verbose=1)
 regr.fit(X_train, y_train)
 pre = regr.predict(X_test)
 
