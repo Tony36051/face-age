@@ -28,7 +28,7 @@ def write_csv(full_path, vgg_feas, ages):
 
 if __name__ == '__main__':
 
-    data_dir = r"d:\data"
+    data_dir = r"/home/tony/data"
     label_path = os.path.join(data_dir, "fgnet_label.txt")
     paths, ages = read_label(label_path)
 
@@ -46,6 +46,7 @@ if __name__ == '__main__':
         vgg_feas.append(features)
 
     fea = np.vstack(tuple(vgg_feas))
+    np.save("vgg-fea", fea)
     fea_tar = np.hstack((fea, np.array([ages]).T))
     np.save("vgg-fea-tar", fea_tar)
     # csv_path = os.path.join(data_dir, 'fgnet-vgg-fea.csv')
